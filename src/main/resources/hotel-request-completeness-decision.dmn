@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions
+    xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+    xmlns:camunda="http://camunda.org/schema/1.0/dmn"
+    id="definitions_completeness"
+    name="HotelRequestCompletenessDecision"
+    namespace="http://hotel-ai-assistant">
+
+  <decision
+      id="hotelRequestCompletenessDecision"
+      name="Hotel Request Completeness Decision"
+      camunda:historyTimeToLive="180">
+
+    <decisionTable id="decisionTable_completeness" hitPolicy="FIRST">
+
+      <input id="emergencyInput" label="Contains Emergency">
+        <inputExpression id="emergencyExpression" typeRef="boolean">
+          <text>containsEmergency</text>
+        </inputExpression>
+      </input>
+
+      <input id="requestCompleteInput" label="Request Complete">
+        <inputExpression id="requestCompleteExpression" typeRef="boolean">
+          <text>requestComplete</text>
+        </inputExpression>
+      </input>
+
+      <input id="confidenceInput" label="Confidence">
+        <inputExpression id="confidenceExpression" typeRef="double">
+          <text>confidence</text>
+        </inputExpression>
+      </input>
+
+      <output
+          id="conversationActionOutput"
+          label="Conversation Action"
+          name="conversationAction"
+          typeRef="string"/>
+
+      <rule id="rule_emergency">
+        <description>Emergency goes directly to human</description>
+        <inputEntry><text>true</text></inputEntry>
+        <inputEntry><text>-</text></inputEntry>
+        <inputEntry><text>-</text></inputEntry>
+        <outputEntry><text>"ESCALATE_HUMAN"</text></outputEntry>
+      </rule>
+
+      <rule id="rule_complete">
+        <description>Complete request can be routed</description>
+        <inputEntry><text>false</text></inputEntry>
+        <inputEntry><text>true</text></inputEntry>
+        <inputEntry><text>&gt;= 0.70</text></inputEntry>
+        <outputEntry><text>"ROUTE_REQUEST"</text></outputEntry>
+      </rule>
+
+      <rule id="rule_incomplete">
+        <description>Incomplete request needs clarification</description>
+        <inputEntry><text>false</text></inputEntry>
+        <inputEntry><text>false</text></inputEntry>
+        <inputEntry><text>-</text></inputEntry>
+        <outputEntry><text>"ASK_CLARIFICATION"</text></outputEntry>
+      </rule>
+
+      <rule id="rule_low_confidence">
+        <description>Low confidence goes to clarification</description>
+        <inputEntry><text>false</text></inputEntry>
+        <inputEntry><text>-</text></inputEntry>
+        <inputEntry><text>&lt; 0.70</text></inputEntry>
+        <outputEntry><text>"ASK_CLARIFICATION"</text></outputEntry>
+      </rule>
+
+    </decisionTable>
+
+  </decision>
+
+</definitions>

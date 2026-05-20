@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+        xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+        xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+        xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+        xmlns:camunda="http://camunda.org/schema/1.0/bpmn"
+        id="Definitions_1"
+        targetNamespace="http://finos.org/fluxnova/demo">
+
+    <bpmn:process
+            id="salesRepRatingProcessV2"
+            name="Sales Rep Rating Process V2"
+            isExecutable="true"
+            camunda:historyTimeToLive="180">
+
+        <bpmn:startEvent id="StartEvent_1" name="Start">
+            <bpmn:outgoing>Flow_1</bpmn:outgoing>
+        </bpmn:startEvent>
+
+        <bpmn:serviceTask
+                id="Activity_PrepareInput"
+                name="Prepare Communication Input"
+                camunda:delegateExpression="${prepareCommunicationInputDelegate}">
+            <bpmn:incoming>Flow_1</bpmn:incoming>
+            <bpmn:outgoing>Flow_2</bpmn:outgoing>
+        </bpmn:serviceTask>
+
+        <bpmn:serviceTask
+                id="Activity_RateCommunication"
+                name="Rate Sales Communication (Gemma3)"
+                camunda:delegateExpression="${salesCommunicationRatingDelegate}">
+            <bpmn:incoming>Flow_2</bpmn:incoming>
+            <bpmn:outgoing>Flow_3</bpmn:outgoing>
+        </bpmn:serviceTask>
+
+        <bpmn:endEvent id="EndEvent_1" name="End">
+            <bpmn:incoming>Flow_3</bpmn:incoming>
+        </bpmn:endEvent>
+
+        <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Activity_PrepareInput"/>
+        <bpmn:sequenceFlow id="Flow_2" sourceRef="Activity_PrepareInput" targetRef="Activity_RateCommunication"/>
+        <bpmn:sequenceFlow id="Flow_3" sourceRef="Activity_RateCommunication" targetRef="EndEvent_1"/>
+
+    </bpmn:process>
+
+    <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+        <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="salesRepRatingProcessV2">
+
+            <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+                <dc:Bounds x="120" y="102" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Activity_PrepareInput_di" bpmnElement="Activity_PrepareInput">
+                <dc:Bounds x="220" y="80" width="170" height="80"/>
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="Activity_RateCommunication_di" bpmnElement="Activity_RateCommunication">
+                <dc:Bounds x="450" y="80" width="170" height="80"/>
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
+                <dc:Bounds x="690" y="102" width="36" height="36"/>
+            </bpmndi:BPMNShape>
+
+            <bpmndi:BPMNEdge id="Flow_1_di" bpmnElement="Flow_1">
+                <di:waypoint x="156" y="120"/>
+                <di:waypoint x="220" y="120"/>
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge id="Flow_2_di" bpmnElement="Flow_2">
+                <di:waypoint x="390" y="120"/>
+                <di:waypoint x="450" y="120"/>
+            </bpmndi:BPMNEdge>
+
+            <bpmndi:BPMNEdge id="Flow_3_di" bpmnElement="Flow_3">
+                <di:waypoint x="620" y="120"/>
+                <di:waypoint x="690" y="120"/>
+            </bpmndi:BPMNEdge>
+
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+
+</bpmn:definitions>

@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions
+    xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+    xmlns:camunda="http://camunda.org/schema/1.0/dmn"
+    id="definitions"
+    name="HotelRoutingDecision"
+    namespace="http://hotel-ai-assistant">
+
+  <decision
+      id="hotelRequestRoutingDecision"
+      name="Hotel Request Routing Decision"
+      camunda:historyTimeToLive="180">
+
+    <decisionTable
+        id="decisionTable"
+        hitPolicy="FIRST">
+
+      <input id="intentInput" label="Intent">
+        <inputExpression id="intentExpression" typeRef="string">
+          <text>intent</text>
+        </inputExpression>
+      </input>
+
+      <input id="confidenceInput" label="Confidence">
+        <inputExpression id="confidenceExpression" typeRef="double">
+          <text>confidence</text>
+        </inputExpression>
+      </input>
+
+      <input id="emergencyInput" label="Contains Emergency">
+        <inputExpression id="emergencyExpression" typeRef="boolean">
+          <text>containsEmergency</text>
+        </inputExpression>
+      </input>
+
+      <output
+          id="decisionOutput"
+          label="Decision"
+          name="decision"
+          typeRef="string"/>
+
+      <rule id="rule1">
+        <description>Emergency escalation</description>
+        <inputEntry id="rule1_input1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule1_input2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule1_input3">
+          <text>true</text>
+        </inputEntry>
+        <outputEntry id="rule1_output">
+          <text>"HUMAN_REVIEW"</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="rule2">
+        <description>FAQ auto handling</description>
+        <inputEntry id="rule2_input1">
+          <text>"FAQ"</text>
+        </inputEntry>
+        <inputEntry id="rule2_input2">
+          <text>&gt;= 0.80</text>
+        </inputEntry>
+        <inputEntry id="rule2_input3">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="rule2_output">
+          <text>"FAQ"</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="rule3">
+        <description>Room service request</description>
+        <inputEntry id="rule3_input1">
+          <text>"ROOM_SERVICE"</text>
+        </inputEntry>
+        <inputEntry id="rule3_input2">
+          <text>&gt;= 0.75</text>
+        </inputEntry>
+        <inputEntry id="rule3_input3">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="rule3_output">
+          <text>"ROOM_SERVICE"</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="rule4">
+        <description>Maintenance request</description>
+        <inputEntry id="rule4_input1">
+          <text>"MAINTENANCE"</text>
+        </inputEntry>
+        <inputEntry id="rule4_input2">
+          <text>&gt;= 0.70</text>
+        </inputEntry>
+        <inputEntry id="rule4_input3">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="rule4_output">
+          <text>"MAINTENANCE"</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="rule5">
+        <description>Fallback to human review</description>
+        <inputEntry id="rule5_input1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule5_input2">
+          <text>&lt; 0.70</text>
+        </inputEntry>
+        <inputEntry id="rule5_input3">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="rule5_output">
+          <text>"HUMAN_REVIEW"</text>
+        </outputEntry>
+      </rule>
+
+    </decisionTable>
+
+  </decision>
+
+</definitions>

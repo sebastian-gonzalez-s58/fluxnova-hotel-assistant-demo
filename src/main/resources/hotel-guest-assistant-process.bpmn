@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" id="Definitions_1" targetNamespace="http://hotel-ai-assistant" exporter="Camunda Modeler" exporterVersion="5.31.0">
+    <bpmn:message id="Message_GuestReplyReceived" name="GuestReplyReceived" />
+  <bpmn:process id="hotelGuestAssistantProcess" name="Hotel Guest Assistant Process" isExecutable="true" camunda:historyTimeToLive="180">
+    <bpmn:startEvent id="StartEvent_1" name="Guest Message Received">
+      <bpmn:outgoing>Flow_Start_To_Append</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="AppendMessageTask" name="Append Message To Conversation" camunda:delegateExpression="${appendConversationDelegate}">
+      <bpmn:incoming>Flow_Start_To_Append</bpmn:incoming>
+      <bpmn:incoming>Flow_Wait_To_Append</bpmn:incoming>
+      <bpmn:outgoing>Flow_Append_To_Extract</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="ExtractIntentTask" name="Extract Intent And Entities" camunda:delegateExpression="${extractIntentDelegate}">
+      <bpmn:incoming>Flow_Append_To_Extract</bpmn:incoming>
+      <bpmn:outgoing>Flow_Extract_To_Completeness</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:businessRuleTask id="EvaluateCompletenessTask" name="Evaluate Request Completeness" camunda:decisionRef="hotelRequestCompletenessDecision" camunda:mapDecisionResult="singleEntry" camunda:resultVariable="conversationAction">
+      <bpmn:incoming>Flow_Extract_To_Completeness</bpmn:incoming>
+      <bpmn:outgoing>Flow_Completeness_To_Gateway</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:exclusiveGateway id="CompletenessGateway" name="Request Complete?">
+      <bpmn:incoming>Flow_Completeness_To_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_Clarification</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Routing_DMN</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Human_Immediate</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="GenerateClarificationTask" name="Generate Clarification Question" camunda:delegateExpression="${clarificationQuestionDelegate}">
+      <bpmn:incoming>Flow_To_Clarification</bpmn:incoming>
+      <bpmn:outgoing>Flow_Clarification_To_Send</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="SendClarificationTask" name="Send Clarification To Guest" camunda:delegateExpression="${sendWhatsappResponseDelegate}">
+      <bpmn:incoming>Flow_Clarification_To_Send</bpmn:incoming>
+      <bpmn:outgoing>Flow_Send_To_Wait</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:receiveTask id="WaitForGuestReplyTask" name="Wait For Guest Reply" messageRef="Message_GuestReplyReceived">
+      <bpmn:incoming>Flow_Send_To_Wait</bpmn:incoming>
+      <bpmn:outgoing>Flow_Wait_To_Append</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:businessRuleTask id="EvaluateRoutingTask" name="Evaluate Request Routing" camunda:decisionRef="hotelRequestRoutingDecision" camunda:mapDecisionResult="singleEntry" camunda:resultVariable="decision">
+      <bpmn:incoming>Flow_To_Routing_DMN</bpmn:incoming>
+      <bpmn:outgoing>Flow_Routing_To_Gateway</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:exclusiveGateway id="RoutingGateway" name="Route Request">
+      <bpmn:incoming>Flow_Routing_To_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_To_FAQ</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_RoomService</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Maintenance</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Human</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="FAQTask" name="Generate FAQ Response" camunda:delegateExpression="${faqDelegate}">
+      <bpmn:incoming>Flow_To_FAQ</bpmn:incoming>
+      <bpmn:outgoing>Flow_FAQ_To_Response</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="RoomServiceTask" name="Create Room Service Order" camunda:delegateExpression="${roomServiceDelegate}">
+      <bpmn:incoming>Flow_To_RoomService</bpmn:incoming>
+      <bpmn:outgoing>Flow_RoomService_To_Response</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="MaintenanceTask" name="Maintenance Staff Review">
+      <bpmn:incoming>Flow_To_Maintenance</bpmn:incoming>
+      <bpmn:outgoing>Flow_Maintenance_To_Response</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:userTask id="HumanEscalationTask" name="Front Desk Human Review">
+      <bpmn:incoming>Flow_To_Human</bpmn:incoming>
+      <bpmn:incoming>Flow_To_Human_Immediate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Human_To_Response</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:serviceTask id="SendResponseTask" name="Send WhatsApp Response" camunda:delegateExpression="${sendWhatsappResponseDelegate}">
+      <bpmn:incoming>Flow_FAQ_To_Response</bpmn:incoming>
+      <bpmn:incoming>Flow_RoomService_To_Response</bpmn:incoming>
+      <bpmn:incoming>Flow_Maintenance_To_Response</bpmn:incoming>
+      <bpmn:incoming>Flow_Human_To_Response</bpmn:incoming>
+      <bpmn:outgoing>Flow_Response_To_End</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_1" name="Conversation Complete">
+      <bpmn:incoming>Flow_Response_To_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_To_Append" sourceRef="StartEvent_1" targetRef="AppendMessageTask" />
+    <bpmn:sequenceFlow id="Flow_Append_To_Extract" sourceRef="AppendMessageTask" targetRef="ExtractIntentTask" />
+    <bpmn:sequenceFlow id="Flow_Extract_To_Completeness" sourceRef="ExtractIntentTask" targetRef="EvaluateCompletenessTask" />
+    <bpmn:sequenceFlow id="Flow_Completeness_To_Gateway" sourceRef="EvaluateCompletenessTask" targetRef="CompletenessGateway" />
+    <bpmn:sequenceFlow id="Flow_To_Clarification" sourceRef="CompletenessGateway" targetRef="GenerateClarificationTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${conversationAction == "ASK_CLARIFICATION"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_To_Routing_DMN" sourceRef="CompletenessGateway" targetRef="EvaluateRoutingTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${conversationAction == "ROUTE_REQUEST"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_To_Human_Immediate" sourceRef="CompletenessGateway" targetRef="HumanEscalationTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${conversationAction == "ESCALATE_HUMAN"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Clarification_To_Send" sourceRef="GenerateClarificationTask" targetRef="SendClarificationTask" />
+    <bpmn:sequenceFlow id="Flow_Send_To_Wait" sourceRef="SendClarificationTask" targetRef="WaitForGuestReplyTask" />
+    <bpmn:sequenceFlow id="Flow_Wait_To_Append" sourceRef="WaitForGuestReplyTask" targetRef="AppendMessageTask" />
+    <bpmn:sequenceFlow id="Flow_Routing_To_Gateway" sourceRef="EvaluateRoutingTask" targetRef="RoutingGateway" />
+    <bpmn:sequenceFlow id="Flow_To_FAQ" sourceRef="RoutingGateway" targetRef="FAQTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "FAQ"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_To_RoomService" sourceRef="RoutingGateway" targetRef="RoomServiceTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "ROOM_SERVICE"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_To_Maintenance" sourceRef="RoutingGateway" targetRef="MaintenanceTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "MAINTENANCE"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_To_Human" sourceRef="RoutingGateway" targetRef="HumanEscalationTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "HUMAN_REVIEW"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_FAQ_To_Response" sourceRef="FAQTask" targetRef="SendResponseTask" />
+    <bpmn:sequenceFlow id="Flow_RoomService_To_Response" sourceRef="RoomServiceTask" targetRef="SendResponseTask" />
+    <bpmn:sequenceFlow id="Flow_Maintenance_To_Response" sourceRef="MaintenanceTask" targetRef="SendResponseTask" />
+    <bpmn:sequenceFlow id="Flow_Human_To_Response" sourceRef="HumanEscalationTask" targetRef="SendResponseTask" />
+    <bpmn:sequenceFlow id="Flow_Response_To_End" sourceRef="SendResponseTask" targetRef="EndEvent_1" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="hotelGuestAssistantProcess">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_1">
+        <dc:Bounds x="180" y="250" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="159" y="286" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AppendMessageTask_di" bpmnElement="AppendMessageTask">
+        <dc:Bounds x="290" y="228" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExtractIntentTask_di" bpmnElement="ExtractIntentTask">
+        <dc:Bounds x="510" y="228" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EvaluateCompletenessTask_di" bpmnElement="EvaluateCompletenessTask">
+        <dc:Bounds x="730" y="228" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CompletenessGateway_di" bpmnElement="CompletenessGateway" isMarkerVisible="true">
+        <dc:Bounds x="980" y="243" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="978" y="205.5" width="54" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GenerateClarificationTask_di" bpmnElement="GenerateClarificationTask">
+        <dc:Bounds x="920" y="420" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SendClarificationTask_di" bpmnElement="SendClarificationTask">
+        <dc:Bounds x="700" y="420" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WaitForGuestReplyTask_di" bpmnElement="WaitForGuestReplyTask">
+        <dc:Bounds x="480" y="420" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EvaluateRoutingTask_di" bpmnElement="EvaluateRoutingTask">
+        <dc:Bounds x="1140" y="228" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RoutingGateway_di" bpmnElement="RoutingGateway" isMarkerVisible="true">
+        <dc:Bounds x="1380" y="243" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1440" y="261" width="74" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FAQTask_di" bpmnElement="FAQTask">
+        <dc:Bounds x="1520" y="40" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RoomServiceTask_di" bpmnElement="RoomServiceTask">
+        <dc:Bounds x="1520" y="160" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="MaintenanceTask_di" bpmnElement="MaintenanceTask">
+        <dc:Bounds x="1520" y="280" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="HumanEscalationTask_di" bpmnElement="HumanEscalationTask">
+        <dc:Bounds x="1520" y="400" width="160" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SendResponseTask_di" bpmnElement="SendResponseTask">
+        <dc:Bounds x="1800" y="228" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
+        <dc:Bounds x="2080" y="250" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2066" y="286" width="65" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_Start_To_Append_di" bpmnElement="Flow_Start_To_Append">
+        <di:waypoint x="216" y="268" />
+        <di:waypoint x="290" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Wait_To_Append_di" bpmnElement="Flow_Wait_To_Append">
+        <di:waypoint x="480" y="460" />
+        <di:waypoint x="365" y="460" />
+        <di:waypoint x="365" y="308" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Append_To_Extract_di" bpmnElement="Flow_Append_To_Extract">
+        <di:waypoint x="440" y="268" />
+        <di:waypoint x="510" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Extract_To_Completeness_di" bpmnElement="Flow_Extract_To_Completeness">
+        <di:waypoint x="660" y="268" />
+        <di:waypoint x="730" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Completeness_To_Gateway_di" bpmnElement="Flow_Completeness_To_Gateway">
+        <di:waypoint x="900" y="268" />
+        <di:waypoint x="980" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Clarification_di" bpmnElement="Flow_To_Clarification">
+        <di:waypoint x="1005" y="293" />
+        <di:waypoint x="1005" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Routing_DMN_di" bpmnElement="Flow_To_Routing_DMN">
+        <di:waypoint x="1030" y="268" />
+        <di:waypoint x="1140" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Human_Immediate_di" bpmnElement="Flow_To_Human_Immediate">
+        <di:waypoint x="1005" y="293" />
+        <di:waypoint x="1005" y="370" />
+        <di:waypoint x="1600" y="370" />
+        <di:waypoint x="1600" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Clarification_To_Send_di" bpmnElement="Flow_Clarification_To_Send">
+        <di:waypoint x="920" y="460" />
+        <di:waypoint x="870" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Send_To_Wait_di" bpmnElement="Flow_Send_To_Wait">
+        <di:waypoint x="700" y="460" />
+        <di:waypoint x="650" y="460" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Routing_To_Gateway_di" bpmnElement="Flow_Routing_To_Gateway">
+        <di:waypoint x="1300" y="268" />
+        <di:waypoint x="1380" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_FAQ_di" bpmnElement="Flow_To_FAQ">
+        <di:waypoint x="1405" y="243" />
+        <di:waypoint x="1405" y="80" />
+        <di:waypoint x="1520" y="80" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_RoomService_di" bpmnElement="Flow_To_RoomService">
+        <di:waypoint x="1405" y="243" />
+        <di:waypoint x="1405" y="200" />
+        <di:waypoint x="1520" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Maintenance_di" bpmnElement="Flow_To_Maintenance">
+        <di:waypoint x="1405" y="293" />
+        <di:waypoint x="1405" y="320" />
+        <di:waypoint x="1520" y="320" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_To_Human_di" bpmnElement="Flow_To_Human">
+        <di:waypoint x="1405" y="293" />
+        <di:waypoint x="1405" y="440" />
+        <di:waypoint x="1520" y="440" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FAQ_To_Response_di" bpmnElement="Flow_FAQ_To_Response">
+        <di:waypoint x="1680" y="80" />
+        <di:waypoint x="1740" y="80" />
+        <di:waypoint x="1740" y="268" />
+        <di:waypoint x="1800" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RoomService_To_Response_di" bpmnElement="Flow_RoomService_To_Response">
+        <di:waypoint x="1680" y="200" />
+        <di:waypoint x="1740" y="200" />
+        <di:waypoint x="1740" y="268" />
+        <di:waypoint x="1800" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Maintenance_To_Response_di" bpmnElement="Flow_Maintenance_To_Response">
+        <di:waypoint x="1680" y="320" />
+        <di:waypoint x="1740" y="320" />
+        <di:waypoint x="1740" y="268" />
+        <di:waypoint x="1800" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Human_To_Response_di" bpmnElement="Flow_Human_To_Response">
+        <di:waypoint x="1680" y="440" />
+        <di:waypoint x="1740" y="440" />
+        <di:waypoint x="1740" y="268" />
+        <di:waypoint x="1800" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Response_To_End_di" bpmnElement="Flow_Response_To_End">
+        <di:waypoint x="1970" y="268" />
+        <di:waypoint x="2080" y="268" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

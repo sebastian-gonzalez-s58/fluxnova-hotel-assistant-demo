@@ -1,0 +1,27 @@
+spring:
+  application:
+    name: fluxnova-sales-rep-rating-demo
+
+  datasource:
+    url: jdbc:h2:mem:fluxnova-demo;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: ""
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.finos.fluxnova: INFO
+    org.springframework: INFO
+    org.finos.fluxnova.bpm.demo.salesreps: DEBUG
+
+fluxnova:
+  bpm:
+    admin-user:
+      id: demo
+      password: demo
+      firstName: Demo
+    filter:
+      create: All tasks
