@@ -84,15 +84,15 @@
       <bpmn:incoming>Flow_Confirmed_To_RoomService</bpmn:incoming>
       <bpmn:outgoing>Flow_RoomService_To_Response</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:userTask id="MaintenanceTask" name="Maintenance Staff Review">
+    <bpmn:serviceTask id="MaintenanceTask" name="Notify Maintenance Staff" camunda:delegateExpression="${maintenanceStaffReviewDelegate}">
       <bpmn:incoming>Flow_To_Maintenance</bpmn:incoming>
       <bpmn:outgoing>Flow_Maintenance_To_Response</bpmn:outgoing>
-    </bpmn:userTask>
-    <bpmn:userTask id="HumanEscalationTask" name="Front Desk Human Review">
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="HumanEscalationTask" name="Notify Front Desk" camunda:delegateExpression="${humanEscalationDelegate}">
       <bpmn:incoming>Flow_To_Human</bpmn:incoming>
       <bpmn:incoming>Flow_To_Human_Immediate</bpmn:incoming>
       <bpmn:outgoing>Flow_Human_To_Response</bpmn:outgoing>
-    </bpmn:userTask>
+    </bpmn:serviceTask>
     <bpmn:serviceTask id="SendResponseTask" name="Send WhatsApp Response" camunda:delegateExpression="${sendWhatsappResponseDelegate}">
       <bpmn:incoming>Flow_FAQ_To_Response</bpmn:incoming>
       <bpmn:incoming>Flow_RoomService_To_Response</bpmn:incoming>

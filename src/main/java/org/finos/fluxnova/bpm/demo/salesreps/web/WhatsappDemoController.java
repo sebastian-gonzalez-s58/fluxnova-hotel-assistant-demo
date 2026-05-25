@@ -37,7 +37,7 @@ public class WhatsappDemoController {
         Map<String, Object> result = new HashMap<>();
         result.put("processInstanceId", processInstanceId);
         result.put("message", response != null ? response : "Request completed.");
-        result.put("completed", response == null);
+        result.put("completed", !isProcessActive(processInstanceId));
 
         return result;
     }
@@ -46,6 +46,10 @@ public class WhatsappDemoController {
     public Map<String, Object> receiveGuestReply(@RequestBody Map<String, Object> body) {
         String processInstanceId = body.get("processInstanceId").toString();
         String guestMessage = body.get("guestMessage").toString();
+
+        if (!isProcessActive(processInstanceId)) {
+            return startConversation(body);
+        }
 
         runtimeService.createMessageCorrelation("GuestReplyReceived")
                 .processInstanceId(processInstanceId)
@@ -57,8 +61,14 @@ public class WhatsappDemoController {
         Map<String, Object> result = new HashMap<>();
         result.put("processInstanceId", processInstanceId);
         result.put("message", response != null ? response : "Request completed.");
-        result.put("completed", response == null);
+        result.put("completed", !isProcessActive(processInstanceId));
 
         return result;
+    }
+
+    private boolean isProcessActive(String processInstanceId) {
+        return runtimeService.createProcessInstanceQuery()
+                .processInstanceId(processInstanceId)
+                .singleResult() != null;
     }
 }
