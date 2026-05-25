@@ -76,4 +76,20 @@ public class ConversationVariableMapper {
                 new TypeReference<Map<String, Object>>() {}
         );
     }
+
+    public Map<String, Object> getMap(
+            DelegateExecution execution,
+            String variableName
+    ) {
+        Object raw = execution.getVariable(variableName);
+
+        if (raw == null) {
+            return new HashMap<>();
+        }
+
+        return objectMapper.convertValue(
+                raw,
+                new TypeReference<Map<String, Object>>() {}
+        );
+    }
 }

@@ -51,8 +51,37 @@
       <bpmn:incoming>Flow_To_FAQ</bpmn:incoming>
       <bpmn:outgoing>Flow_FAQ_To_Response</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:serviceTask id="RoomServiceTask" name="Create Room Service Order" camunda:delegateExpression="${roomServiceDelegate}">
+    <bpmn:serviceTask id="GenerateRoomServiceConfirmationTask" name="Generate Room Service Confirmation" camunda:delegateExpression="${roomServiceConfirmationDelegate}">
       <bpmn:incoming>Flow_To_RoomService</bpmn:incoming>
+      <bpmn:outgoing>Flow_RoomServiceConfirmation_To_Send</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="SendRoomServiceConfirmationTask" name="Send Order Confirmation" camunda:delegateExpression="${sendWhatsappResponseDelegate}">
+      <bpmn:incoming>Flow_RoomServiceConfirmation_To_Send</bpmn:incoming>
+      <bpmn:incoming>Flow_ChangeRequested_To_SendConfirmation</bpmn:incoming>
+      <bpmn:incoming>Flow_Unclear_To_SendConfirmation</bpmn:incoming>
+      <bpmn:outgoing>Flow_SendRoomServiceConfirmation_To_Wait</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:receiveTask id="WaitForRoomServiceConfirmationTask" name="Wait For Order Confirmation" messageRef="Message_GuestReplyReceived">
+      <bpmn:incoming>Flow_SendRoomServiceConfirmation_To_Wait</bpmn:incoming>
+      <bpmn:outgoing>Flow_WaitRoomServiceConfirmation_To_AppendReply</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:serviceTask id="AppendRoomServiceConfirmationReplyTask" name="Append Order Confirmation Reply" camunda:delegateExpression="${appendConversationDelegate}">
+      <bpmn:incoming>Flow_WaitRoomServiceConfirmation_To_AppendReply</bpmn:incoming>
+      <bpmn:outgoing>Flow_AppendRoomServiceConfirmationReply_To_Evaluate</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="EvaluateRoomServiceConfirmationTask" name="Evaluate Order Confirmation" camunda:delegateExpression="${roomServiceConfirmationEvaluationDelegate}">
+      <bpmn:incoming>Flow_AppendRoomServiceConfirmationReply_To_Evaluate</bpmn:incoming>
+      <bpmn:outgoing>Flow_EvaluateRoomServiceConfirmation_To_Gateway</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="RoomServiceConfirmationGateway" name="Order Confirmed?">
+      <bpmn:incoming>Flow_EvaluateRoomServiceConfirmation_To_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Confirmed_To_RoomService</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ChangeRequested_To_SendConfirmation</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Unclear_To_SendConfirmation</bpmn:outgoing>
+      <bpmn:outgoing>Flow_OrderCancelled_To_Response</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="RoomServiceTask" name="Create Room Service Order" camunda:delegateExpression="${roomServiceDelegate}">
+      <bpmn:incoming>Flow_Confirmed_To_RoomService</bpmn:incoming>
       <bpmn:outgoing>Flow_RoomService_To_Response</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:userTask id="MaintenanceTask" name="Maintenance Staff Review">
@@ -69,6 +98,7 @@
       <bpmn:incoming>Flow_RoomService_To_Response</bpmn:incoming>
       <bpmn:incoming>Flow_Maintenance_To_Response</bpmn:incoming>
       <bpmn:incoming>Flow_Human_To_Response</bpmn:incoming>
+      <bpmn:incoming>Flow_OrderCancelled_To_Response</bpmn:incoming>
       <bpmn:outgoing>Flow_Response_To_End</bpmn:outgoing>
     </bpmn:serviceTask>
     <bpmn:endEvent id="EndEvent_1" name="Conversation Complete">
@@ -94,7 +124,7 @@
     <bpmn:sequenceFlow id="Flow_To_FAQ" sourceRef="RoutingGateway" targetRef="FAQTask">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "FAQ"}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="Flow_To_RoomService" sourceRef="RoutingGateway" targetRef="RoomServiceTask">
+    <bpmn:sequenceFlow id="Flow_To_RoomService" sourceRef="RoutingGateway" targetRef="GenerateRoomServiceConfirmationTask">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "ROOM_SERVICE"}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_To_Maintenance" sourceRef="RoutingGateway" targetRef="MaintenanceTask">
@@ -104,6 +134,23 @@
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "HUMAN_REVIEW"}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_FAQ_To_Response" sourceRef="FAQTask" targetRef="SendResponseTask" />
+    <bpmn:sequenceFlow id="Flow_RoomServiceConfirmation_To_Send" sourceRef="GenerateRoomServiceConfirmationTask" targetRef="SendRoomServiceConfirmationTask" />
+    <bpmn:sequenceFlow id="Flow_SendRoomServiceConfirmation_To_Wait" sourceRef="SendRoomServiceConfirmationTask" targetRef="WaitForRoomServiceConfirmationTask" />
+    <bpmn:sequenceFlow id="Flow_WaitRoomServiceConfirmation_To_AppendReply" sourceRef="WaitForRoomServiceConfirmationTask" targetRef="AppendRoomServiceConfirmationReplyTask" />
+    <bpmn:sequenceFlow id="Flow_AppendRoomServiceConfirmationReply_To_Evaluate" sourceRef="AppendRoomServiceConfirmationReplyTask" targetRef="EvaluateRoomServiceConfirmationTask" />
+    <bpmn:sequenceFlow id="Flow_EvaluateRoomServiceConfirmation_To_Gateway" sourceRef="EvaluateRoomServiceConfirmationTask" targetRef="RoomServiceConfirmationGateway" />
+    <bpmn:sequenceFlow id="Flow_Confirmed_To_RoomService" sourceRef="RoomServiceConfirmationGateway" targetRef="RoomServiceTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${roomServiceConfirmationAction == "CONFIRMED"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ChangeRequested_To_SendConfirmation" sourceRef="RoomServiceConfirmationGateway" targetRef="SendRoomServiceConfirmationTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${roomServiceConfirmationAction == "CHANGE_REQUESTED"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_Unclear_To_SendConfirmation" sourceRef="RoomServiceConfirmationGateway" targetRef="SendRoomServiceConfirmationTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${roomServiceConfirmationAction == "UNCLEAR"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_OrderCancelled_To_Response" sourceRef="RoomServiceConfirmationGateway" targetRef="SendResponseTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${roomServiceConfirmationAction == "CANCELLED"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_RoomService_To_Response" sourceRef="RoomServiceTask" targetRef="SendResponseTask" />
     <bpmn:sequenceFlow id="Flow_Maintenance_To_Response" sourceRef="MaintenanceTask" targetRef="SendResponseTask" />
     <bpmn:sequenceFlow id="Flow_Human_To_Response" sourceRef="HumanEscalationTask" targetRef="SendResponseTask" />
@@ -153,8 +200,29 @@
       <bpmndi:BPMNShape id="FAQTask_di" bpmnElement="FAQTask">
         <dc:Bounds x="1520" y="40" width="160" height="80" />
       </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GenerateRoomServiceConfirmationTask_di" bpmnElement="GenerateRoomServiceConfirmationTask">
+        <dc:Bounds x="1520" y="160" width="190" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SendRoomServiceConfirmationTask_di" bpmnElement="SendRoomServiceConfirmationTask">
+        <dc:Bounds x="1780" y="160" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="WaitForRoomServiceConfirmationTask_di" bpmnElement="WaitForRoomServiceConfirmationTask">
+        <dc:Bounds x="2020" y="160" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AppendRoomServiceConfirmationReplyTask_di" bpmnElement="AppendRoomServiceConfirmationReplyTask">
+        <dc:Bounds x="2260" y="160" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EvaluateRoomServiceConfirmationTask_di" bpmnElement="EvaluateRoomServiceConfirmationTask">
+        <dc:Bounds x="2510" y="160" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RoomServiceConfirmationGateway_di" bpmnElement="RoomServiceConfirmationGateway" isMarkerVisible="true">
+        <dc:Bounds x="2740" y="175" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2724" y="141" width="83" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="RoomServiceTask_di" bpmnElement="RoomServiceTask">
-        <dc:Bounds x="1520" y="160" width="160" height="80" />
+        <dc:Bounds x="2870" y="160" width="160" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="MaintenanceTask_di" bpmnElement="MaintenanceTask">
         <dc:Bounds x="1520" y="280" width="160" height="80" />
@@ -163,12 +231,12 @@
         <dc:Bounds x="1520" y="400" width="160" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="SendResponseTask_di" bpmnElement="SendResponseTask">
-        <dc:Bounds x="1800" y="228" width="170" height="80" />
+        <dc:Bounds x="3150" y="228" width="170" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_1_di" bpmnElement="EndEvent_1">
-        <dc:Bounds x="2080" y="250" width="36" height="36" />
+        <dc:Bounds x="3430" y="250" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="2066" y="286" width="65" height="27" />
+          <dc:Bounds x="3416" y="286" width="65" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Flow_Start_To_Append_di" bpmnElement="Flow_Start_To_Append">
@@ -240,31 +308,72 @@
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_FAQ_To_Response_di" bpmnElement="Flow_FAQ_To_Response">
         <di:waypoint x="1680" y="80" />
-        <di:waypoint x="1740" y="80" />
-        <di:waypoint x="1740" y="268" />
-        <di:waypoint x="1800" y="268" />
+        <di:waypoint x="3090" y="80" />
+        <di:waypoint x="3090" y="268" />
+        <di:waypoint x="3150" y="268" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_RoomServiceConfirmation_To_Send_di" bpmnElement="Flow_RoomServiceConfirmation_To_Send">
+        <di:waypoint x="1710" y="200" />
+        <di:waypoint x="1780" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_SendRoomServiceConfirmation_To_Wait_di" bpmnElement="Flow_SendRoomServiceConfirmation_To_Wait">
+        <di:waypoint x="1950" y="200" />
+        <di:waypoint x="2020" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_WaitRoomServiceConfirmation_To_AppendReply_di" bpmnElement="Flow_WaitRoomServiceConfirmation_To_AppendReply">
+        <di:waypoint x="2200" y="200" />
+        <di:waypoint x="2260" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_AppendRoomServiceConfirmationReply_To_Evaluate_di" bpmnElement="Flow_AppendRoomServiceConfirmationReply_To_Evaluate">
+        <di:waypoint x="2440" y="200" />
+        <di:waypoint x="2510" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_EvaluateRoomServiceConfirmation_To_Gateway_di" bpmnElement="Flow_EvaluateRoomServiceConfirmation_To_Gateway">
+        <di:waypoint x="2690" y="200" />
+        <di:waypoint x="2740" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Confirmed_To_RoomService_di" bpmnElement="Flow_Confirmed_To_RoomService">
+        <di:waypoint x="2790" y="200" />
+        <di:waypoint x="2870" y="200" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ChangeRequested_To_SendConfirmation_di" bpmnElement="Flow_ChangeRequested_To_SendConfirmation">
+        <di:waypoint x="2765" y="225" />
+        <di:waypoint x="2765" y="330" />
+        <di:waypoint x="1865" y="330" />
+        <di:waypoint x="1865" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_Unclear_To_SendConfirmation_di" bpmnElement="Flow_Unclear_To_SendConfirmation">
+        <di:waypoint x="2765" y="225" />
+        <di:waypoint x="2765" y="370" />
+        <di:waypoint x="1865" y="370" />
+        <di:waypoint x="1865" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_OrderCancelled_To_Response_di" bpmnElement="Flow_OrderCancelled_To_Response">
+        <di:waypoint x="2765" y="225" />
+        <di:waypoint x="2765" y="268" />
+        <di:waypoint x="3150" y="268" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_RoomService_To_Response_di" bpmnElement="Flow_RoomService_To_Response">
-        <di:waypoint x="1680" y="200" />
-        <di:waypoint x="1740" y="200" />
-        <di:waypoint x="1740" y="268" />
-        <di:waypoint x="1800" y="268" />
+        <di:waypoint x="3030" y="200" />
+        <di:waypoint x="3090" y="200" />
+        <di:waypoint x="3090" y="268" />
+        <di:waypoint x="3150" y="268" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Maintenance_To_Response_di" bpmnElement="Flow_Maintenance_To_Response">
         <di:waypoint x="1680" y="320" />
-        <di:waypoint x="1740" y="320" />
-        <di:waypoint x="1740" y="268" />
-        <di:waypoint x="1800" y="268" />
+        <di:waypoint x="3090" y="320" />
+        <di:waypoint x="3090" y="268" />
+        <di:waypoint x="3150" y="268" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Human_To_Response_di" bpmnElement="Flow_Human_To_Response">
         <di:waypoint x="1680" y="440" />
-        <di:waypoint x="1740" y="440" />
-        <di:waypoint x="1740" y="268" />
-        <di:waypoint x="1800" y="268" />
+        <di:waypoint x="3090" y="440" />
+        <di:waypoint x="3090" y="268" />
+        <di:waypoint x="3150" y="268" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="Flow_Response_To_End_di" bpmnElement="Flow_Response_To_End">
-        <di:waypoint x="1970" y="268" />
-        <di:waypoint x="2080" y="268" />
+        <di:waypoint x="3320" y="268" />
+        <di:waypoint x="3430" y="268" />
       </bpmndi:BPMNEdge>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>

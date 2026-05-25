@@ -5,6 +5,10 @@ import org.finos.fluxnova.bpm.demo.salesreps.dto.ClarificationResponse;
 import org.finos.fluxnova.bpm.demo.salesreps.dto.FaqResponse;
 import org.finos.fluxnova.bpm.demo.salesreps.dto.HotelConversationRequest;
 import org.finos.fluxnova.bpm.demo.salesreps.dto.HotelExtractionResponse;
+import org.finos.fluxnova.bpm.demo.salesreps.dto.RoomServiceConfirmationEvaluationRequest;
+import org.finos.fluxnova.bpm.demo.salesreps.dto.RoomServiceConfirmationEvaluationResponse;
+import org.finos.fluxnova.bpm.demo.salesreps.dto.RoomServiceConfirmationRequest;
+import org.finos.fluxnova.bpm.demo.salesreps.dto.RoomServiceConfirmationResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 
@@ -45,5 +49,25 @@ public class HotelAgentClient {
                 .body(request)
                 .retrieve()
                 .body(FaqResponse.class);
+    }
+
+    public RoomServiceConfirmationResponse generateRoomServiceConfirmation(
+            RoomServiceConfirmationRequest request
+    ) {
+        return hotelAgentRestClient.post()
+                .uri("/hotel/room-service-confirmation")
+                .body(request)
+                .retrieve()
+                .body(RoomServiceConfirmationResponse.class);
+    }
+
+    public RoomServiceConfirmationEvaluationResponse evaluateRoomServiceConfirmation(
+            RoomServiceConfirmationEvaluationRequest request
+    ) {
+        return hotelAgentRestClient.post()
+                .uri("/hotel/evaluate-room-service-confirmation")
+                .body(request)
+                .retrieve()
+                .body(RoomServiceConfirmationEvaluationResponse.class);
     }
 }

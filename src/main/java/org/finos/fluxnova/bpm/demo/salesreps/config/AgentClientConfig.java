@@ -11,6 +11,7 @@ public class AgentClientConfig {
     public RestClient hotelAgentRestClient() {
         return RestClient.builder()
                 .baseUrl("https://hotel-ai-agent-471r.onrender.com")
+                //.baseUrl("http://127.0.0.1:8000")
                 .build();
     }
 }

@@ -18,15 +18,18 @@ public class RoomServiceDelegate implements JavaDelegate {
 
     @Override
     public void execute(DelegateExecution execution) {
-        Map<String, Object> extraction = mapper.getExtraction(execution);
+        Map<String, Object> order = mapper.getMap(execution, "pendingRoomServiceOrder");
 
         String roomNumber = mapper.getString(execution, "roomNumber");
+        if (roomNumber == null && order.get("roomNumber") != null) {
+            roomNumber = order.get("roomNumber").toString();
+        }
 
-        String response = "Your room service order has been received"
+        String response = "Thanks, your room service order has been placed"
                 + (roomNumber != null ? " for room " + roomNumber : "")
-                + ". The hotel team will confirm it shortly.";
+                + ". The hotel team will prepare it shortly.";
 
-        execution.setVariable("roomServiceOrder", extraction);
+        execution.setVariable("roomServiceOrder", order);
         execution.setVariable("outgoingWhatsappMessage", response);
         execution.setVariable("lastAssistantMessage", response);
     }
