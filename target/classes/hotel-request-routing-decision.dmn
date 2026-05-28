@@ -104,17 +104,49 @@
       </rule>
 
       <rule id="rule5">
-        <description>Fallback to human review</description>
+        <description>Housekeeping request</description>
         <inputEntry id="rule5_input1">
-          <text>-</text>
+          <text>"HOUSEKEEPING"</text>
         </inputEntry>
         <inputEntry id="rule5_input2">
-          <text>&lt; 0.70</text>
+          <text>&gt;= 0.70</text>
         </inputEntry>
         <inputEntry id="rule5_input3">
           <text>false</text>
         </inputEntry>
         <outputEntry id="rule5_output">
+          <text>"HOUSEKEEPING"</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="rule6">
+        <description>Fallback to human review</description>
+        <inputEntry id="rule6_input1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule6_input2">
+          <text>&lt; 0.70</text>
+        </inputEntry>
+        <inputEntry id="rule6_input3">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="rule6_output">
+          <text>"HUMAN_REVIEW"</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="rule7">
+        <description>Unmatched non-emergency request goes to human review</description>
+        <inputEntry id="rule7_input1">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule7_input2">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="rule7_input3">
+          <text>false</text>
+        </inputEntry>
+        <outputEntry id="rule7_output">
           <text>"HUMAN_REVIEW"</text>
         </outputEntry>
       </rule>

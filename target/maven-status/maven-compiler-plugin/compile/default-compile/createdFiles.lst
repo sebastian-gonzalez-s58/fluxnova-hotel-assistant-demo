@@ -26,6 +26,7 @@ org\finos\fluxnova\bpm\demo\salesreps\dto\RoomServiceConfirmationEvaluationReque
 org\finos\fluxnova\bpm\demo\salesreps\delegate\FaqDelegate.class
 org\finos\fluxnova\bpm\demo\salesreps\service\WhatsappMessageStore.class
 org\finos\fluxnova\bpm\demo\salesreps\dto\ClarificationRequest.class
+org\finos\fluxnova\bpm\demo\salesreps\delegate\HousekeepingDelegate.class
 org\finos\fluxnova\bpm\demo\salesreps\delegate\AppendConversationDelegate.class
 org\finos\fluxnova\bpm\demo\salesreps\delegate\SendWhatsappResponseDelegate.class
 org\finos\fluxnova\bpm\demo\salesreps\dto\ConversationMessageDto.class

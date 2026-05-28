@@ -7,6 +7,7 @@ C:\Users\sebas\OneDrive\Documentos\fluxnova-sales-rep-rating-demo\src\main\java\
 C:\Users\sebas\OneDrive\Documentos\fluxnova-sales-rep-rating-demo\src\main\java\org\finos\fluxnova\bpm\demo\salesreps\dto\RoomServiceConfirmationEvaluationRequest.java
 C:\Users\sebas\OneDrive\Documentos\fluxnova-sales-rep-rating-demo\src\main\java\org\finos\fluxnova\bpm\demo\salesreps\FluxnovaSalesRepRatingApplication.java
 C:\Users\sebas\OneDrive\Documentos\fluxnova-sales-rep-rating-demo\src\main\java\org\finos\fluxnova\bpm\demo\salesreps\delegate\ExtractIntentDelegate.java
+C:\Users\sebas\OneDrive\Documentos\fluxnova-sales-rep-rating-demo\src\main\java\org\finos\fluxnova\bpm\demo\salesreps\delegate\HousekeepingDelegate.java
 C:\Users\sebas\OneDrive\Documentos\fluxnova-sales-rep-rating-demo\src\main\java\org\finos\fluxnova\bpm\demo\salesreps\config\LlmConfig.java
 C:\Users\sebas\OneDrive\Documentos\fluxnova-sales-rep-rating-demo\src\main\java\org\finos\fluxnova\bpm\demo\salesreps\service\HotelAgentClient.java
 C:\Users\sebas\OneDrive\Documentos\fluxnova-sales-rep-rating-demo\src\main\java\org\finos\fluxnova\bpm\demo\salesreps\delegate\SendWhatsappResponseDelegate.java

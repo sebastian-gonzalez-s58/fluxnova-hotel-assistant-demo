@@ -45,6 +45,7 @@
       <bpmn:outgoing>Flow_To_FAQ</bpmn:outgoing>
       <bpmn:outgoing>Flow_To_RoomService</bpmn:outgoing>
       <bpmn:outgoing>Flow_To_Maintenance</bpmn:outgoing>
+      <bpmn:outgoing>Flow_To_Housekeeping</bpmn:outgoing>
       <bpmn:outgoing>Flow_To_Human</bpmn:outgoing>
     </bpmn:exclusiveGateway>
     <bpmn:serviceTask id="FAQTask" name="Generate FAQ Response" camunda:delegateExpression="${faqDelegate}">
@@ -88,6 +89,10 @@
       <bpmn:incoming>Flow_To_Maintenance</bpmn:incoming>
       <bpmn:outgoing>Flow_Maintenance_To_Response</bpmn:outgoing>
     </bpmn:serviceTask>
+    <bpmn:serviceTask id="HousekeepingTask" name="Notify Housekeeping" camunda:delegateExpression="${housekeepingDelegate}">
+      <bpmn:incoming>Flow_To_Housekeeping</bpmn:incoming>
+      <bpmn:outgoing>Flow_Housekeeping_To_Response</bpmn:outgoing>
+    </bpmn:serviceTask>
     <bpmn:serviceTask id="HumanEscalationTask" name="Notify Front Desk" camunda:delegateExpression="${humanEscalationDelegate}">
       <bpmn:incoming>Flow_To_Human</bpmn:incoming>
       <bpmn:incoming>Flow_To_Human_Immediate</bpmn:incoming>
@@ -97,6 +102,7 @@
       <bpmn:incoming>Flow_FAQ_To_Response</bpmn:incoming>
       <bpmn:incoming>Flow_RoomService_To_Response</bpmn:incoming>
       <bpmn:incoming>Flow_Maintenance_To_Response</bpmn:incoming>
+      <bpmn:incoming>Flow_Housekeeping_To_Response</bpmn:incoming>
       <bpmn:incoming>Flow_Human_To_Response</bpmn:incoming>
       <bpmn:incoming>Flow_OrderCancelled_To_Response</bpmn:incoming>
       <bpmn:outgoing>Flow_Response_To_End</bpmn:outgoing>
@@ -130,6 +136,9 @@
     <bpmn:sequenceFlow id="Flow_To_Maintenance" sourceRef="RoutingGateway" targetRef="MaintenanceTask">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "MAINTENANCE"}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_To_Housekeeping" sourceRef="RoutingGateway" targetRef="HousekeepingTask">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "HOUSEKEEPING"}</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_To_Human" sourceRef="RoutingGateway" targetRef="HumanEscalationTask">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${decision == "HUMAN_REVIEW"}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
@@ -153,6 +162,7 @@
     </bpmn:sequenceFlow>
     <bpmn:sequenceFlow id="Flow_RoomService_To_Response" sourceRef="RoomServiceTask" targetRef="SendResponseTask" />
     <bpmn:sequenceFlow id="Flow_Maintenance_To_Response" sourceRef="MaintenanceTask" targetRef="SendResponseTask" />
+    <bpmn:sequenceFlow id="Flow_Housekeeping_To_Response" sourceRef="HousekeepingTask" targetRef="SendResponseTask" />
     <bpmn:sequenceFlow id="Flow_Human_To_Response" sourceRef="HumanEscalationTask" targetRef="SendResponseTask" />
     <bpmn:sequenceFlow id="Flow_Response_To_End" sourceRef="SendResponseTask" targetRef="EndEvent_1" />
   </bpmn:process>
